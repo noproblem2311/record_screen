@@ -20,25 +20,6 @@ document.addEventListener("DOMContentLoaded", function () {
                     if (event.data.size > 0) {
                         console.log("check");
                         videoData.append("chunks", event.data);
-                        // if ( videoData.size > 500){
-                        //     console.log("start sending sub video");
-                        //     fetch('http://localhost:8000/handle_video/', { 
-                        //         method: 'POST',
-                        //         body: {
-                        //             chunks: videoData,
-                        //             isrecording: true
-                        //         }
-                        //     })
-                        //     .then(response => response.json())
-                        //     .then(data => {
-                        //         console.log('Video uploaded:', data);
-                        //     })
-                        //     .catch(error => {
-                        //         console.error('Error uploading video:', error);
-                        //     });
-
-                        //     videoData = new FormData();
-                        // }
                     }
                 };
 

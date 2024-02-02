@@ -16,6 +16,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     function sendVideoData() {
         // Gửi videoData đến server
+        console.log("type of videoData: ", typeof videoData);
         fetch('http://localhost:8000/handle_video/', { 
             method: 'POST',
             body: videoData

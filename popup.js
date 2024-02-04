@@ -52,7 +52,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
                 mediaRecorder.onstop = sendVideoData; // Gửi dữ liệu còn lại khi dừng ghi
 
-                mediaRecorder.start(1000); // Chia video thành chunks sau mỗi 1000ms
+                mediaRecorder.start();
                 startButton.disabled = true;
                 stopButton.disabled = false;
                 infoBox.textContent = "Recording...";

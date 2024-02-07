@@ -9,6 +9,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@clerk/clerk-react": "^4.30.4",
     "@google-cloud/storage": "^7.7.0"
   }
 }

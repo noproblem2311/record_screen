@@ -47,6 +47,9 @@ document.addEventListener("DOMContentLoaded", function () {
     
 
     startButton.addEventListener("click", () => {
+
+        chrome.runtime.sendMessage({status: "Start record"});
+
         navigator.mediaDevices.getDisplayMedia({ audio: true, video: true })
             .then((stream) => {
                 mediaRecorder = new MediaRecorder(stream);
@@ -91,7 +94,9 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     });
 
-
+    setInterval(() => {
+       console.log("this is note",noteContent);
+    }, 1000);
     chrome.runtime.onMessage.addListener(
         function(request, sender, sendResponse) {
           if (request.status == "DATA_HERE") {

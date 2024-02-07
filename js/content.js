@@ -1,15 +1,11 @@
 
 // Tạo một container để chứa ô nhập text và nút thu nhỏ
 
-
+console.log("content.js is running");
   
 setInterval(() => {
   chrome.runtime.sendMessage({status: "DATA_HERE", action: noteInput.value});
 }, 20000);
-
-
-
-
 
 const noteContainer = document.createElement("div");
 noteContainer.style.position = "fixed";

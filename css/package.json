@@ -1,0 +1,15 @@
+{
+  "name": "extentioncheck",
+  "version": "1.0.0",
+  "description": "",
+  "main": "background.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@clerk/clerk-react": "^4.30.4",
+    "@google-cloud/storage": "^7.7.0"
+  }
+}

@@ -1,72 +1,89 @@
+let isRecording = false; // Trạng thái ghi âm
 
-// Tạo một container để chứa ô nhập text và nút thu nhỏ
+// Tạo khung điều khiển UI cho ghi âm
+const controlPanel = document.createElement('div');
+controlPanel.style.cssText = 'position: fixed; bottom: 10px; left: 10px; background: lightgray; padding: 10px; z-index: 2147483647; display: none;';
+controlPanel.innerHTML = `
+  <button id="toggleRecording">Start Recording</button>
+  <div id="status">
+    <p>Microphone & Camera status: <span id="permissionStatus">Unknown</span></p>
+  </div>
+`;
+document.body.appendChild(controlPanel);
 
-
-  
-setInterval(() => {
-  chrome.runtime.sendMessage({status: "DATA_HERE", action: noteInput.value});
-}, 20000);
-
-
-
-
-
+// Tạo container để chứa ô nhập text và nút thu nhỏ
 const noteContainer = document.createElement("div");
-noteContainer.style.position = "fixed";
-noteContainer.style.bottom = "20px";
-noteContainer.style.right = "20px";
-
-// Cố gắng đặt zIndex cao nhất
-const existingZIndexes = [...document.querySelectorAll('*')]
-  .map(elem => parseFloat(window.getComputedStyle(elem).zIndex))
-  .filter(zIndex => !isNaN(zIndex));
-const highestZIndex = existingZIndexes.length > 0 ? Math.max(...existingZIndexes) : 0;
-noteContainer.style.zIndex = highestZIndex + 1; // Đảm bảo rằng container nằm trên cùng
+noteContainer.style.cssText = 'position: fixed; bottom: 20px; right: 20px; z-index: 2147483648;';
 
 // Tạo ô nhập text
 const noteInput = document.createElement("textarea");
-noteInput.style.width = "20vw";
-noteInput.style.height = "90vh";
+noteInput.style.cssText = 'width: 20vw; height: 90vh;';
 
-// Tạo nút thu nhỏ
+// Tạo nút thu nhỏ và khôi phục
 const minimizeButton = document.createElement("button");
-minimizeButton.innerHTML = "-";
-minimizeButton.style.position = "absolute";
-minimizeButton.style.top = "0";
-minimizeButton.style.right = "0";
-minimizeButton.style.fontSize = "3em";
-minimizeButton.style.marginRight = "10px";
+minimizeButton.textContent = "-";
+minimizeButton.style.cssText = 'position: absolute; top: 0; right: 0; font-size: 3em;';
 
-// Tạo nút khôi phục kích thước
 const restoreButton = document.createElement("button");
-restoreButton.innerHTML = "+";
-restoreButton.style.position = "absolute";
-restoreButton.style.top = "0";
-restoreButton.style.right = "50px";
-restoreButton.style.display = "none"; // Ẩn nút khôi phục cho đến khi cần thiết
-restoreButton.style.fontSize = "3em";
-// restoreButton.style.paddingBottom = "20px";
-// Thêm nút thu nhỏ và khôi phục vào container
+restoreButton.textContent = "+";
+restoreButton.style.cssText = 'position: absolute; top: 0; right: 50px; display: none; font-size: 3em;';
+
 noteContainer.appendChild(minimizeButton);
 noteContainer.appendChild(restoreButton);
 noteContainer.appendChild(noteInput);
-
-// Thêm container vào trang web
 document.body.appendChild(noteContainer);
 
-// Định nghĩa hành động thu nhỏ
-minimizeButton.onclick = function() {
-    noteInput.style.width = "5vw";
-    noteInput.style.height = "5vh";
-    minimizeButton.style.display = "none";
-    restoreButton.style.display = "block";
+// Logic thu nhỏ và khôi phục
+minimizeButton.onclick = () => {
+  noteInput.style.width = "5vw";
+  noteInput.style.height = "5vh";
+  minimizeButton.style.display = "none";
+  restoreButton.style.display = "block";
 };
 
-// Định nghĩa hành động khôi phục kích thước ban đầu
-restoreButton.onclick = function() {
-    noteInput.style.width = "20vw";
-    noteInput.style.height = "90vh";
-    restoreButton.style.display = "none";
-    minimizeButton.style.display = "block";
+restoreButton.onclick = () => {
+  noteInput.style.width = "20vw";
+  noteInput.style.height = "90vh";
+  restoreButton.style.display = "none";
+  minimizeButton.style.display = "block";
 };
 
+const toggleRecordingBtn = document.getElementById('toggleRecording');
+
+toggleRecordingBtn.addEventListener('click', () => {
+  let messageData = { action: isRecording ? "stop" : "start" };
+  
+  // Điều chỉnh ở đây để gửi nội dung của textarea khi dừng ghi âm
+  if (!isRecording) {
+    chrome.runtime.sendMessage(messageData);
+  } else {
+    // Bao gồm nội dung của textarea trong tin nhắn khi dừng ghi âm
+    messageData.content = noteInput.value;
+    chrome.runtime.sendMessage(messageData);
+  }
+
+  isRecording = !isRecording; // Đảo trạng thái ghi âm
+  updateButtonState(); // Cập nhật trạng thái nút
+});
+
+function updateButtonState() {
+  if (isRecording) {
+    toggleRecordingBtn.textContent = 'Stop Recording';
+  } else {
+    toggleRecordingBtn.textContent = 'Start Recording';
+  }
+}
+
+// Lắng nghe tin nhắn từ background script
+chrome.runtime.onMessage.addListener((request) => {
+  if (request.toggle === "controlPanel") {
+    const display = controlPanel.style.display === 'none' ? 'block' : 'none';
+    controlPanel.style.display = display;
+    if (display === 'block') {
+      updateButtonState(); // Cập nhật trạng thái nút dựa trên trạng thái ghi âm hiện tại
+    }
+  }
+});
+
+// Mặc định hiển thị khung điều khiển
+controlPanel.style.display = 'block';

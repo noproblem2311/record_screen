@@ -3,9 +3,8 @@
   "name": "Recorder Extension",
   "version": "1.0",
   "description": "A simple recorder extension",
-  "permissions": ["activeTab", "tabCapture", "desktopCapture", "microphone","tabs"],
+  "permissions": ["activeTab", "tabCapture", "desktopCapture", "microphone","tabs","windows"],
   "action": {
-    "default_popup": "popup.html",
     "default_icon": {
       "16": "images/icon16.png",
       "48": "images/icon48.png",
@@ -18,7 +17,7 @@
     "128": "images/icon128.png"
   },
   "background": {
-    "service_worker": "background.js"
+    "service_worker": "js/background.js"
   },
   "host_permissions": [
     "https://meet.google.com/*",
@@ -26,9 +25,16 @@
   ],
   "content_scripts": [
     {
-      "matches": ["https://meet.google.com/*"],
-      "js": ["js/content.js"],
-      "css": ["css/style.css"]
+      "matches": ["https://meet.google.com/", "https://meet.google.com/*"],
+      "js": ["js/content.js"]
+    }
+   
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["html/pinnedTab.html", "js/pinnedTabScript.js"],
+      "matches": ["<all_urls>"]
     }
   ]
+  
 }

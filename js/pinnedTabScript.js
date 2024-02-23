@@ -8,11 +8,10 @@ function sendVideoData(message) {
     videoData.append("note", note); // Thêm note vào FormData
     if (videoData.has("chunks")) { // Kiểm tra xem có dữ liệu video không
         // Gửi dữ liệu video đến server
-        fetch('http://localhost:8000/handle_video/', {
+        fetch('http://endpoint/', {
             method: 'POST',
             headers: {
-                // 'Authorization': `Bearer ${token}` // Thêm token vào header Authorization
-                'Authorization': `Bearer 77cae78e45ee8358bc2f1924a7c901ba79ee2df8` // Thêm token vào header Authorization
+                contentType: 'multipart/form-data'
             },
             body: videoData
         })

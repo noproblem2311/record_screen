@@ -1,77 +1,111 @@
 let mediaRecorder;
-let videoData = new FormData(); // Dùng để gửi dữ liệu
-let note = ""; // Nội dung ghi chú từ textarea
-
-// Hàm gửi video data đã được chỉnh sửa để phù hợp với logic của bạn
-function sendVideoData(message) {
-    console.log(message);
-    videoData.append("note", note); // Thêm note vào FormData
-    if (videoData.has("chunks")) { // Kiểm tra xem có dữ liệu video không
-        // Gửi dữ liệu video đến server
-        fetch('http://localhost:8000/handle_video/', {
-            method: 'POST',
-            headers: {
-                // 'Authorization': `Bearer ${token}` // Thêm token vào header Authorization
-                'Authorization': `Bearer 77cae78e45ee8358bc2f1924a7c901ba79ee2df8` // Thêm token vào header Authorization
-            },
-            body: videoData
-        })
-        .then(response => response.json())
-        .then(data => {
-            console.log('Chunk uploaded:', data);
-        })
-        .catch(error => {
-            console.error('Error uploading chunk:', error);
-        });
-        videoData = new FormData(); // Khởi tạo lại FormData sau khi gửi
-    } else {
-        console.log("No video data available to send");
-    }
+let note = ""; // Note content from textarea
+let chunkIndex = 0; // Index of the current chunk
+let recordUUID = ""; // UUID for the record
+// Function to generate a UUID
+function generateUUID() {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        var r = Math.random() * 16 | 0,
+            v = c === 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+    });
 }
 
-// Bắt đầu ghi khi trang được tải
-window.onload = function() {
-    let displayStream = null; // Luồng video từ màn hình
-    let audioStream = null; // Luồng audio từ microphone
+// Function to convert a blob to base64 using Promises
+function blobToBase64(blob) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        
+        reader.onload = () => {
+            const base64String = reader.result.replace(/^data:.+;base64,/, '');
+            resolve(base64String);
+        };
+        
 
-    // Yêu cầu truy cập màn hình
+        reader.onerror = () => {
+            reject(new Error('Error reading blob as base64'));
+        };
+
+        reader.readAsDataURL(blob);
+    });
+}
+
+function sendVideoData(chunk) {
+    // Convert the chunk to Base64 using the blobToBase64 function
+    blobToBase64(chunk)
+        .then(base64Data => {
+            // Create headers with the note content
+            const headers = new Headers();
+            headers.append('Note', note);
+            headers.append('recordUUID', recordUUID);
+            headers.append('chunkIndex', chunkIndex.toString());
+            headers.append('Content-Type', 'text/plain');
+            const currentdate = new Date();
+            headers.append('filename', currentdate.toISOString());
+            console.log("headers", headers);
+            console.log("base64Data", base64Data);
+            // Send the Base64 data to the server using a POST request
+            fetch('https://2e5d751xi4.execute-api.ap-southeast-2.amazonaws.com/Prod/', {
+                method: 'POST',
+                headers: headers,
+                body: base64Data
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Video data uploaded:', data);
+            })
+            .catch(error => {
+                console.error('Error uploading video data:', error);
+            });
+
+            // Increment the chunk index
+            chunkIndex++;
+        })
+        .catch(error => {
+            console.error('Error converting chunk to base64:', error);
+        });
+}
+
+function startRecording(stream) {
+    // Generate a UUID for the record at the start of recording
+     recordUUID = generateUUID();
+
+    mediaRecorder = new MediaRecorder(stream);
+
+    // When data is available, convert it to Base64 and send it
+    mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+            console.log("Data available...");
+            sendVideoData(event.data);
+        }
+    };
+    
+    // Start recording
+    mediaRecorder.start(60000);
+
+    console.log("Recording started...");
+}
+
+window.onload = function() {
     navigator.mediaDevices.getDisplayMedia({ video: true })
     .then(stream => {
-        displayStream = stream;
-        // Yêu cầu truy cập microphone
-        return navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-    })
-    .then(aStream => {
-        audioStream = aStream;
-        const tracks = [...displayStream.getVideoTracks(), ...audioStream.getAudioTracks()];
-        const combinedStream = new MediaStream(tracks);
-        startRecording(combinedStream);
+        return navigator.mediaDevices.getUserMedia({ audio: true, video: false })
+        .then(aStream => {
+            const tracks = [...stream.getVideoTracks(), ...aStream.getAudioTracks()];
+            const combinedStream = new MediaStream(tracks);
+            startRecording(combinedStream);
+        });
     })
     .catch(error => {
         console.error("Error accessing media devices:", error);
     });
 };
 
-function startRecording(stream) {
-    mediaRecorder = new MediaRecorder(stream);
-    mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-            videoData.append("chunks", event.data);
-        }
-    };
-    mediaRecorder.onstop = () => {
-        console.log("Recording stopped. Sending final video data...");
-        sendVideoData("Final video data sent.");
-    };
-    mediaRecorder.start();
-    console.log("Recording started...");
-}
-
-// Lắng nghe message từ background script hoặc popup script
+// Listen for stopRecording command
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === "stopRecording") {
-        note = request.content; // Lấy nội dung ghi chú từ request
+        note = request.content; // Update note content from request
+        mediaRecorder.stop(); // Stop recording
         console.log("Stopping recording...");
-        mediaRecorder.stop(); // Dừng ghi âm
     }
 });
